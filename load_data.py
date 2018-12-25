@@ -1,5 +1,6 @@
 from scipy import sparse
 import re
+import helpers
 import pandas as pd
 import numpy as np
 from sklearn.compose import ColumnTransformer
@@ -9,43 +10,26 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import RobustScaler
 
 
-def lex_ticket(ticket):
-    # Get everything before the slash
-    # Get everything after the slash but before the first number
-    # Get all the remaining digits
-    stripped = ticket.replace('.', '').upper().lstrip().rstrip()
-
-    # {'prefix': 'STON', 'postfix': 'O2', 'number': '3101290'}
-    return re.search('(?P<TicketPrefix>[A-Z]*)/?(?P<TicketPostfix>[A-Z0-9]*)\s*(?P<TicketNumber>[0-9]*)()', stripped)
-
-
-def get_lastname(name):
-    return name.split(',')[0].lstrip().rstrip()
-
-
-# Define pre-pipeline transformations. Mutates input.
-def prePipelineProcess(df):
-    df.pop('PassengerId')
-    match_objects = [lex_ticket(value[0]) for value in pd.DataFrame(df['Ticket']).values]
-    for group_name in ('TicketPrefix', 'TicketPostfix', 'TicketNumber'):
-        df[group_name] = [object.group(group_name) for object in match_objects]
-    df.pop('Ticket')
-    df['Name'] = df['Name'].map(get_lastname)
-
 
 # Load from files
 training = pd.read_csv('train.csv')
 testing = pd.read_csv('test.csv')
 
-# Extract target
+helpers.get_title('Crosby, Capt. Edward Gifford')
+
+# Extract target and ID
 target = training.pop('Survived')
-pd.DataFrame(target).to_csv('target.csv', index=False)
-passenger_id = testing['PassengerId']
-pd.DataFrame(passenger_id).to_csv('passenger_id.csv', index=False)
+target.to_pickle('target.pkl')
+trn_psg_id=training.pop('PassengerId')
+tst_psg_id=testing.pop('PassengerId')
 
 # Munge data
-prePipelineProcess(training)
-prePipelineProcess(testing)
+helpers.pre_pipeline_process(training)
+helpers.pre_pipeline_process(testing)
+
+# Save data
+training.to_pickle('pre_pipe_training.pkl')
+training.to_pickle('pre_pipe_testing.pkl')
 
 # Pipeline transforms
 numeric_pipeline = Pipeline([
@@ -59,10 +43,17 @@ categorical_pipeline = Pipeline([
 
 transformer = ColumnTransformer([
     ('num', numeric_pipeline, ['Pclass', 'SibSp', 'Parch', 'Fare']),
-    ('cat', categorical_pipeline, ['Sex', 'Cabin', 'Embarked'])
+    ('cat', categorical_pipeline, ['Sex', 'Cabin', 'Embarked', 'Title'])
 ])
 
+# Create encoded/scaled spare matrices
+csr_training = transformer.fit_transform(training)
+csr_testing= transformer.transform(testing)
 
+# Convert sparse matrices to dataframes with passenger ID for index
+df_training = pd.DataFrame(csr_training.toarray(), index=trn_psg_id)
+df_testing = pd.DataFrame(csr_testing.toarray(), index=tst_psg_id)
 
-sparse.save_npz("training", transformer.fit_transform(training))
-sparse.save_npz("testing", transformer.transform(testing))
+# Save as files
+df_training.to_pickle('training.pkl')
+df_testing.to_pickle('testing.pkl')
