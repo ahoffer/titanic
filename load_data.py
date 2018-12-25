@@ -11,7 +11,7 @@ from sklearn.preprocessing import RobustScaler
 
 
 
-# Load from files
+# Load from intermediate_files
 training = pd.read_csv('train.csv')
 testing = pd.read_csv('test.csv')
 
@@ -19,7 +19,7 @@ helpers.get_title('Crosby, Capt. Edward Gifford')
 
 # Extract target and ID
 target = training.pop('Survived')
-target.to_pickle('target.pkl')
+target.to_pickle('intermediate_files/target.pkl')
 trn_psg_id=training.pop('PassengerId')
 tst_psg_id=testing.pop('PassengerId')
 
@@ -28,8 +28,8 @@ helpers.pre_pipeline_process(training)
 helpers.pre_pipeline_process(testing)
 
 # Save data
-training.to_pickle('pre_pipe_training.pkl')
-training.to_pickle('pre_pipe_testing.pkl')
+training.to_pickle('intermediate_files/pre_pipe_training.pkl')
+training.to_pickle('intermediate_files/pre_pipe_testing.pkl')
 
 # Pipeline transforms
 numeric_pipeline = Pipeline([
@@ -54,6 +54,6 @@ csr_testing= transformer.transform(testing)
 df_training = pd.DataFrame(csr_training.toarray(), index=trn_psg_id)
 df_testing = pd.DataFrame(csr_testing.toarray(), index=tst_psg_id)
 
-# Save as files
-df_training.to_pickle('training.pkl')
-df_testing.to_pickle('testing.pkl')
+# Save as intermediate_files
+df_training.to_pickle('intermediate_files/training.pkl')
+df_testing.to_pickle('intermediate_files/testing.pkl')
