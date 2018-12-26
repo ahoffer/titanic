@@ -10,7 +10,6 @@ import os
 
 import h2o
 from h2o.estimators import H2ORandomForestEstimator
-from h2o.grid import H2OGridSearch
 
 h2o.init()
 h2o.remove_all()
@@ -28,25 +27,10 @@ train[response_name_fact] = train[response_name].asfactor()
 train.impute()
 test.impute()
 
-rf_params = {'max_depth': [2, 3, 5],
-             'ntrees': [5, 10, 20],
-             'seed': 42}
-
-rf_grid = H2OGridSearch(model=H2ORandomForestEstimator,
-                        grid_id='rf_grid',
-                        hyper_params=rf_params)
-
-rf_grid.train(predictor_names,
-              response_name_fact,
-              training_frame=train,
-              )
-
-rf_grid_results = rf_grid.get_grid(sort_by='accuracy', decreasing=True)
-
-best_rf_model = rf_grid_results[0]
-
-
-rf_predictions = best_rf_model.predict(test)
+rf_model = H2ORandomForestEstimator()
+rf_model.train(predictor_names, response_name_fact, training_frame=train)
+auc=rf_model.auc(train=True)
+rf_predictions = rf_model.predict(test)
 rf_submission = test['PassengerId']
 rf_submission['Survived'] = rf_predictions['predict']
 h2o.export_file(rf_submission, os.getcwd() + "/rf_submission.csv", force=True)
