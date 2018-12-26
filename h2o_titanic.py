@@ -25,7 +25,8 @@ response_name = 'Survived'
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
 
-rf_search_criteria = {'strategy': 'RandomDiscrete', 'max_models': 36, 'seed': 1}
+train.impute()
+test.impute()
 
 rf_params = {'max_depth': [2, 3, 5],
              'ntrees': [5, 10, 20],
