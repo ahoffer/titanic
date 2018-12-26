@@ -6,9 +6,10 @@
 # Model: A model is an immutable object having predict and metrics methods.
 # Job: A Job is a non-blocking task that performs a finite amount of work.
 
-import h2o
 import os
-from h2o.estimators import H2ORandomForestEstimator, H2OGradientBoostingEstimator
+
+import h2o
+from h2o.estimators import H2ORandomForestEstimator
 from h2o.grid import H2OGridSearch
 
 h2o.init()
@@ -18,34 +19,33 @@ test = h2o.import_file('test.csv', destination_frame='titanic_test')
 # train = h2o.get_frame('titanic_test')
 # test = h2o.get_frame("test")
 
-# predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
-predictor_names = ['Pclass', 'Sex', 'Age']
+predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
+# predictor_names = ['Pclass', 'Sex', 'Age']
 response_name = 'Survived'
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
 
-gb_params = {'learn_rate': [0.01, 0.05, 0.1, .5],
-             'max_depth': [2, 3, 5, 8],
-             'ntrees': [5, 10, 20, 50, 100],
-             'balance_classes': [True, False],
+rf_search_criteria = {'strategy': 'RandomDiscrete', 'max_models': 36, 'seed': 1}
+
+rf_params = {'max_depth': [2, 3, 5],
+             'ntrees': [5, 10, 20],
              'seed': 42}
 
-gb_grid = H2OGridSearch(model=H2OGradientBoostingEstimator,
-                        grid_id='gb_grid',
-                        hyper_params=gb_params)
+rf_grid = H2OGridSearch(model=H2ORandomForestEstimator,
+                        grid_id='rf_grid',
+                        hyper_params=rf_params)
 
-gb_grid.train(predictor_names,
+rf_grid.train(predictor_names,
               response_name_fact,
               training_frame=train,
-             )
+              )
 
-gb_grid_results = gb_grid.get_grid(sort_by='accuracy', decreasing=True)
+rf_grid_results = rf_grid.get_grid(sort_by='accuracy', decreasing=True)
 
-best_gb_model = gb_grid_results[0]
+best_rf_model = rf_grid_results[0]
 
-best_gb_model.model_performance(valid=True)
 
-gb_predictions = best_gb_model.predict(test)
-gb_submission = test['PassengerId']
-gb_submission['Survived'] =  gb_predictions['predict']
-h2o.export_file(gb_submission, os.getcwd() + "/gb_submission.csv", force=True)
+rf_predictions = best_rf_model.predict(test)
+rf_submission = test['PassengerId']
+rf_submission['Survived'] = rf_predictions['predict']
+h2o.export_file(rf_submission, os.getcwd() + "/rf_submission.csv", force=True)
