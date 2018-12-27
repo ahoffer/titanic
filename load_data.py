@@ -1,15 +1,11 @@
-from scipy import sparse
-import re
-import helpers
 import pandas as pd
-import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import RobustScaler
 
-
+import helpers
 
 # Load from intermediate_files
 training = pd.read_csv('train.csv')
@@ -20,8 +16,8 @@ helpers.get_title('Crosby, Capt. Edward Gifford')
 # Extract target and ID
 target = training.pop('Survived')
 target.to_pickle('intermediate_files/target.pkl')
-trn_psg_id=training.pop('PassengerId')
-tst_psg_id=testing.pop('PassengerId')
+trn_psg_id = training.pop('PassengerId')
+tst_psg_id = testing.pop('PassengerId')
 
 # Munge data
 helpers.pre_pipeline_process(training)
@@ -48,7 +44,7 @@ transformer = ColumnTransformer([
 
 # Create encoded/scaled spare matrices
 csr_training = transformer.fit_transform(training)
-csr_testing= transformer.transform(testing)
+csr_testing = transformer.transform(testing)
 
 # Convert sparse matrices to dataframes with passenger ID for index
 df_training = pd.DataFrame(csr_training.toarray(), index=trn_psg_id)
