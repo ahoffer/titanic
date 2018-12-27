@@ -35,7 +35,6 @@ valid_split = ss[1]
 ntree_range = range(3, 100, 5)
 hyper_params = {'max_depth': [i for i in range(2, 11, 2)],
                 'ntrees': [i for i in range(1, 100, 5)],
-                'min_split_improvement': 1e-03
                 }
 
 search_criteria = {'strategy': "RandomDiscrete", 'max_runtime_secs': 120}
