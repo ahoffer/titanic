@@ -30,3 +30,11 @@ def pre_pipeline_process(df):
     df['LastName'] = df.Name.map(get_lastname)
     df['Title'] = df.Name.map(get_title)
     df.pop('Name')
+
+def pre_pipeline_process_h2o(df):
+    match_objects = [lex_ticket(value[0]) for value in pd.DataFrame(df['Ticket']).values]
+    for group_name in ('TicketPrefix', 'TicketPostfix', 'TicketNumber'):
+        df[group_name] = [object.group(group_name) for object in match_objects]
+    df['LastName'] = df.Name.map(get_lastname)
+    df['Title'] = df.Name.map(get_title)
+    return df

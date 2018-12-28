@@ -9,21 +9,27 @@
 import os
 
 import h2o
+from h2o import H2OFrame
 from h2o.estimators import H2ORandomForestEstimator
 from h2o.grid import H2OGridSearch
 
+import helpers
+
 h2o.init()
 h2o.remove_all()
-train = h2o.import_file('train.csv', destination_frame='titanic_train')
-test = h2o.import_file('test.csv', destination_frame='titanic_test')
+train = h2o.import_file('train.csv', destination_frame='titanic_train', col_types={'Ticket': 'string'})
+test = h2o.import_file('test.csv', destination_frame='titanic_test', col_types={'Ticket': 'string'})
 # train = h2o.get_frame('titanic_test')
 # test = h2o.get_frame("test")
 
-predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
 # predictor_names = ['Pclass', 'Sex', 'Age']
+train = H2OFrame(helpers.pre_pipeline_process_h2o(train.as_data_frame()))
+test = H2OFrame(helpers.pre_pipeline_process_h2o(test.as_data_frame()))
 response_name = 'Survived'
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
+predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Title', 'TicketPrefix',
+                   'TicketPostfix']
 
 train.impute()
 test.impute()
@@ -44,12 +50,16 @@ grid = H2OGridSearch(model=H2ORandomForestEstimator,
                      search_criteria=search_criteria)
 
 grid.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split, seed=42)
+# print(grid.summary())
+# print(grid.auc(valid=True))
 models = grid.get_grid(sort_by='accuracy', decreasing=True)
 model = models[0]
+print(model.auc(xval=True))
+# Retrain on entire set
+# model.train(predictor_names, response_name_fact, training_frame=train)
 
-#Retrain on entire set
-model.train(predictor_names, response_name_fact, training_frame=train)
 predictions = model.predict(test)
+
 submission = test['PassengerId']
 submission['Survived'] = predictions['predict']
 h2o.export_file(submission, os.getcwd() + "/submission.csv", force=True)
