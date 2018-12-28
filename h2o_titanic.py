@@ -29,7 +29,7 @@ response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
 # predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Title', 'TicketPrefix',
 #                    'TicketPostfix']
-predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'Title']
+predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'Title', 'TicketPrefix', 'TicketPostfix', 'Pclass']
 
 train.impute()
 test.impute()
