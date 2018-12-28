@@ -18,21 +18,16 @@ h2o.init()
 h2o.remove_all()
 train = h2o.import_file('train.csv', destination_frame='titanic_train', col_types={'Ticket': 'string'})
 test = h2o.import_file('test.csv', destination_frame='titanic_test', col_types={'Ticket': 'string'})
-# train = h2o.get_frame('titanic_test')
-# test = h2o.get_frame("test")
 
-# predictor_names = ['Pclass', 'Sex', 'Age']
 train = H2OFrame(helpers.pre_pipeline_process_h2o(train.as_data_frame()))
 test = H2OFrame(helpers.pre_pipeline_process_h2o(test.as_data_frame()))
 response_name = 'Survived'
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
-# predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Title', 'TicketPrefix',
-#                    'TicketPostfix']
 predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'Title', 'TicketPrefix', 'TicketPostfix', 'Pclass']
 
-train.impute()
-test.impute()
+# train.impute()
+# test.impute()
 
 ss = train.split_frame(ratios=[0.80], seed=42)
 train_split = ss[0]
