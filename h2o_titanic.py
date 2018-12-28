@@ -11,7 +11,6 @@ import os
 import h2o
 from h2o import H2OFrame
 from h2o.estimators import H2ORandomForestEstimator
-from h2o.grid import H2OGridSearch
 
 import helpers
 
@@ -28,8 +27,9 @@ test = H2OFrame(helpers.pre_pipeline_process_h2o(test.as_data_frame()))
 response_name = 'Survived'
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
-predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Title', 'TicketPrefix',
-                   'TicketPostfix']
+# predictor_names = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked', 'Title', 'TicketPrefix',
+#                    'TicketPostfix']
+predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'Title', 'TicketPrefix', 'TicketPostfix']
 
 train.impute()
 test.impute()
@@ -38,23 +38,9 @@ ss = train.split_frame(ratios=[0.80], seed=42)
 train_split = ss[0]
 valid_split = ss[1]
 
-ntree_range = range(3, 100, 5)
-hyper_params = {'max_depth': [i for i in range(2, 11, 2)],
-                'ntrees': [i for i in range(1, 100, 5)],
-                }
-
-search_criteria = {'strategy': "RandomDiscrete", 'max_runtime_secs': 120}
-
-grid = H2OGridSearch(model=H2ORandomForestEstimator,
-                     hyper_params=hyper_params,
-                     search_criteria=search_criteria)
-
-grid.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split, seed=42)
-# print(grid.summary())
-# print(grid.auc(valid=True))
-models = grid.get_grid(sort_by='accuracy', decreasing=True)
-model = models[0]
-print(model.auc(xval=True))
+model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=10, ntrees=30, seed=42)
+model.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split)
+print(model.auc(valid=True))
 
 predictions = model.predict(test)
 
