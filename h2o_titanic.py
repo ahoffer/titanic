@@ -19,20 +19,36 @@ h2o.remove_all()
 train = h2o.import_file('train.csv', destination_frame='titanic_train', col_types={'Ticket': 'string'})
 test = h2o.import_file('test.csv', destination_frame='titanic_test', col_types={'Ticket': 'string'})
 
-train = H2OFrame(helpers.pre_pipeline_process_h2o(train.as_data_frame()))
-test = H2OFrame(helpers.pre_pipeline_process_h2o(test.as_data_frame()))
 response_name = 'Survived'
+# train = H2OFrame(helpers.pre_pipeline_process_h2o(train.as_data_frame()))
+# test = H2OFrame(helpers.pre_pipeline_process_h2o(test.as_data_frame()))
+train = H2OFrame(helpers.pre_pipeline_process(train.as_data_frame()))
+test = H2OFrame(helpers.pre_pipeline_process(test.as_data_frame()))
+combined = train.drop(response_name).rbind(test)
+
+# Predict Age
+rows_missing_ages = combined['Age'].isna()
+unknown_ages = combined[rows_missing_ages]
+unknown_ages.pop('Age')
+known_ages = combined[rows_missing_ages.logical_negation()]
+age_model = H2ORandomForestEstimator(seed=42)
+age_model.train(['Title', 'Sex', 'Embarked', 'Pclass', 'SibSp', 'Parch', 'Fare'], 'Age', training_frame=known_ages)
+age_prediction = age_model.predict(unknown_ages)
+age_join_frame = age_prediction.cbind(unknown_ages['PassengerId'])
+train = helpers.merge_ages(train, age_join_frame)
+test = helpers.merge_ages(test, age_join_frame)
+
+train.impute()
+test.impute()
+
+# Use classification, not regression
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
-predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'Title', 'TicketPrefix', 'TicketPostfix', 'Pclass']
-
-# train.impute()
-# test.impute()
-
 ss = train.split_frame(ratios=[0.80], seed=42)
 train_split = ss[0]
 valid_split = ss[1]
 
+predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Pclass']
 model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=10, ntrees=30, seed=42)
 model.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split)
 print(model.auc(valid=True))

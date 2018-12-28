@@ -1,11 +1,41 @@
 import re
 
 import pandas as pd
+from h2o import H2OFrame
+
+social_position = {
+    'MASTER': 'YOUTH',
+    'MISS': 'YOUTH',
+    'MS': 'YOUTH',
+    'MLLE': 'YOUTH',
+    'CAPT': 'OFFICER',
+    'MAJOR': 'OFFICER',
+    'COL': 'OFFICER',
+    'SIR': 'NOBILITY',
+    'DONA': 'NOBILITY',
+    'DON': 'NOBILITY',
+    'LADY': 'NOBILITY',
+    'DR': 'PROFESSIONAL',
+    'REV': 'PROFESSIONAL',
+    'MR': 'NORMAL',
+    'MRS': 'NORMAL',
+    'JONKHEER': 'NORMAL',
+    'MME': 'NORMAL',
+    'THE': 'NORMAL'}
+
 
 def get_title(fullname):
     # Assume everyone has a title for now.
     matcher = re.search('.*,\s+(?P<Title>\w+)', fullname.upper())
-    return matcher.group("Title")
+    val = matcher.group("Title")
+    if val.isnumeric():
+        print(val)
+    return val
+
+
+def get_social_position(title):
+    return social_position.get(title)
+
 
 def lex_ticket(ticket):
     # Get everything before the slash
@@ -18,8 +48,10 @@ def lex_ticket(ticket):
     return re.search('(?P<TicketPrefix>[A-Z]*)/?(?P<TicketPostfix>[A-Z0-9]*)\s*(?P<TicketNumber>[0-9]*)()',
                      stripped)
 
+
 def get_lastname(fullname):
     return fullname.split(',')[0].lstrip().rstrip().upper()
+
 
 # Define pre-pipeline transformations. Mutates input.
 def pre_pipeline_process(df):
@@ -29,12 +61,19 @@ def pre_pipeline_process(df):
     df.pop('Ticket')
     df['LastName'] = df.Name.map(get_lastname)
     df['Title'] = df.Name.map(get_title)
+    df['SocialPosition'] = df.Title.map(get_social_position)
     df.pop('Name')
-
-def pre_pipeline_process_h2o(df):
-    match_objects = [lex_ticket(value[0]) for value in pd.DataFrame(df['Ticket']).values]
-    for group_name in ('TicketPrefix', 'TicketPostfix', 'TicketNumber'):
-        df[group_name] = [object.group(group_name) for object in match_objects]
-    df['LastName'] = df.Name.map(get_lastname)
-    df['Title'] = df.Name.map(get_title)
     return df
+
+
+def merge_ages(df, ages):
+    a = df.merge(ages, all_x=True).sort('PassengerId')
+    b = a.as_data_frame()
+    missing_rows = b['Age'].isna()
+    b.loc[missing_rows, 'Age'] = b.loc[missing_rows, 'predict']
+    c = H2OFrame(b)
+    c.pop('predict')
+    # Somehow, the columns, some columns get corrupted in by the merge
+    c['Title'] = df['Title']
+    c['Sex'] = df['Sex']
+    return c
