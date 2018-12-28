@@ -55,8 +55,6 @@ grid.train(predictor_names, response_name_fact, training_frame=train_split, vali
 models = grid.get_grid(sort_by='accuracy', decreasing=True)
 model = models[0]
 print(model.auc(xval=True))
-# Retrain on entire set
-# model.train(predictor_names, response_name_fact, training_frame=train)
 
 predictions = model.predict(test)
 
