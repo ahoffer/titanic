@@ -49,7 +49,7 @@ train_split = ss[0]
 valid_split = ss[1]
 
 predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Pclass']
-model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=14, ntrees=45, balance_classes=True, seed=42)
+model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=7, ntrees=45, balance_classes=True, seed=42)
 model.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split)
 predictions = model.predict(test)
 submission = test['PassengerId']
