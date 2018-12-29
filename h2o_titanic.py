@@ -44,17 +44,16 @@ test.impute()
 # Use classification, not regression
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
-ss = train.split_frame(ratios=[0.80], seed=42)
+ss = train.split_frame(ratios=[0.9], seed=42)
 train_split = ss[0]
 valid_split = ss[1]
 
 predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Pclass']
-model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=10, ntrees=30, seed=42)
+model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=14, ntrees=45, balance_classes=True, seed=42)
 model.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split)
-print(model.auc(valid=True))
-
 predictions = model.predict(test)
-
 submission = test['PassengerId']
 submission['Survived'] = predictions['predict']
 h2o.export_file(submission, os.getcwd() + "/submission.csv", force=True)
+print(model.auc())
+

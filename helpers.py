@@ -1,7 +1,7 @@
 import re
 
 import pandas as pd
-from h2o import H2OFrame
+from h2o import H2OFrame, h2o
 
 social_position = {
     'MASTER': 'YOUTH',
@@ -66,14 +66,12 @@ def pre_pipeline_process(df):
     return df
 
 
-def merge_ages(df, ages):
-    a = df.merge(ages, all_x=True).sort('PassengerId')
-    b = a.as_data_frame()
-    missing_rows = b['Age'].isna()
-    b.loc[missing_rows, 'Age'] = b.loc[missing_rows, 'predict']
-    c = H2OFrame(b)
-    c.pop('predict')
+def merge_ages(frame, ages):
+    df = frame.merge(ages, all_x=True).sort('PassengerId').as_data_frame()
+    missing_rows = df['Age'].isna()
+    df.loc[missing_rows, 'Age'] = df.loc[missing_rows, 'predict']
+    merged_frame = H2OFrame(df)
     # Somehow, the columns, some columns get corrupted in by the merge
-    c['Title'] = df['Title']
-    c['Sex'] = df['Sex']
-    return c
+    copy_df = h2o.deep_copy(merged_frame, 'copy_df')
+    copy_df['Age'] = merged_frame.pop('Age')
+    return copy_df.drop('predict')
