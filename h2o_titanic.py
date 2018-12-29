@@ -44,7 +44,7 @@ test.impute()
 # Use classification, not regression
 response_name_fact = 'Survived_factor'
 train[response_name_fact] = train[response_name].asfactor()
-ss = train.split_frame(ratios=[0.8], seed=42)
+ss = train.split_frame(ratios=[0.95], seed=42)
 train_split = ss[0]
 valid_split = ss[1]
 
