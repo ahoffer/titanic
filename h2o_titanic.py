@@ -10,7 +10,7 @@ import os
 
 import h2o
 from h2o import H2OFrame
-from h2o.estimators import H2ORandomForestEstimator
+from h2o.estimators import H2ORandomForestEstimator, H2OGeneralizedLinearEstimator
 
 import helpers
 
@@ -37,6 +37,7 @@ age_join_frame = age_prediction.cbind(unknown_ages['PassengerId'])
 train = helpers.merge_ages(train, age_join_frame)
 test = helpers.merge_ages(test, age_join_frame)
 
+
 train.impute()
 test.impute()
 
@@ -47,11 +48,12 @@ ss = train.split_frame(ratios=[0.9], seed=42)
 train_split = ss[0]
 valid_split = ss[1]
 
-predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Embarked', 'CabinLetter']
-model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=7, ntrees=60, balance_classes=True, seed=42)
+predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Embarked', 'Title', 'LastName']
+model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=7, ntrees=60, balance_classes=True, seed=42, nfolds=5)
 model.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split)
 predictions = model.predict(test)
 submission = test['PassengerId']
 submission['Survived'] = predictions['predict']
 h2o.export_file(submission, os.getcwd() + "/submission.csv", force=True)
+print(model.summary)
 print(model.auc())
