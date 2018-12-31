@@ -53,6 +53,14 @@ def get_lastname(fullname):
     return fullname.split(',')[0].lstrip().rstrip().upper()
 
 
+def setCabinInformation(df):
+    # letters = [re.search('[A-Z]', value[0]) for value in pd.DataFrame(df['Cabin'].values)]
+    na = df['Cabin'].notna()
+    cabins = df.loc[na, 'Cabin']
+    letters = [value[0] for value in cabins]
+    df.loc[na, 'CabinLetter'] = letters
+
+
 # Define pre-pipeline transformations. Mutates input.
 def pre_pipeline_process(df):
     match_objects = [lex_ticket(value[0]) for value in pd.DataFrame(df['Ticket']).values]
@@ -63,6 +71,7 @@ def pre_pipeline_process(df):
     df['Title'] = df.Name.map(get_title)
     df['SocialPosition'] = df.Title.map(get_social_position)
     df.pop('Name')
+    setCabinInformation(df)
     return df
 
 

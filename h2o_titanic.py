@@ -16,12 +16,11 @@ import helpers
 
 h2o.init()
 h2o.remove_all()
-train = h2o.import_file('train.csv', destination_frame='titanic_train', col_types={'Ticket': 'string'})
-test = h2o.import_file('test.csv', destination_frame='titanic_test', col_types={'Ticket': 'string'})
+train = h2o.import_file('train.csv', destination_frame='titanic_train',
+                        col_types={'Ticket': 'string', 'Cabin': 'string'})
+test = h2o.import_file('test.csv', destination_frame='titanic_test', col_types={'Ticket': 'string', 'Cabin': 'string'})
 
 response_name = 'Survived'
-# train = H2OFrame(helpers.pre_pipeline_process_h2o(train.as_data_frame()))
-# test = H2OFrame(helpers.pre_pipeline_process_h2o(test.as_data_frame()))
 train = H2OFrame(helpers.pre_pipeline_process(train.as_data_frame()))
 test = H2OFrame(helpers.pre_pipeline_process(test.as_data_frame()))
 combined = train.drop(response_name).rbind(test)
@@ -48,7 +47,7 @@ ss = train.split_frame(ratios=[0.9], seed=42)
 train_split = ss[0]
 valid_split = ss[1]
 
-predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Embarked', 'Title']
+predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Embarked']
 model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=7, ntrees=60, balance_classes=True, seed=42)
 model.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split)
 predictions = model.predict(test)
@@ -56,4 +55,3 @@ submission = test['PassengerId']
 submission['Survived'] = predictions['predict']
 h2o.export_file(submission, os.getcwd() + "/submission.csv", force=True)
 print(model.auc())
-
