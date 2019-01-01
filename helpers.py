@@ -79,6 +79,13 @@ def merge_ages(frame, ages):
     df = frame.merge(ages, all_x=True).sort('PassengerId').as_data_frame()
     missing_rows = df['Age'].isna()
     df.loc[missing_rows, 'Age'] = df.loc[missing_rows, 'predict']
+
+    # For odds turns of fate, need to convert the response var back to factor
+    # exactly here. (If the Pandas frame is converted to an H2O frame, the
+    # response column becomes a real number instead of an integer and H2O can
+    # convert integers to factors, but it cannot convert real numbers to factors.
+    df['Survived_factor'] = df['Survived_factor'].astype('category')
+
     merged_frame = H2OFrame(df)
     # Somehow, the columns, some columns get corrupted in by the merge
     copy_df = h2o.deep_copy(merged_frame, 'copy_df')
