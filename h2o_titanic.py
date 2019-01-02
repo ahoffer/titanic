@@ -40,14 +40,14 @@ train_idx = test_idx.logical_negation()
 all_data = H2OFrame(helpers.pre_pipeline_process(all_data.as_data_frame()))
 
 # Predict Age
-rows_missing_ages = all_data['Age'].isna()
-unknown_ages = all_data[rows_missing_ages]
-unknown_ages.pop('Age')
-known_ages = all_data[rows_missing_ages.logical_negation()]
+missing_ages_idx = all_data['Age'].isna()
+unknown_ages_df = all_data[missing_ages_idx]
+unknown_ages_df.pop('Age')
+known_ages_df = all_data[missing_ages_idx.logical_negation()]
 age_model = H2ORandomForestEstimator(seed=42)
-age_model.train(['Title', 'Sex', 'Embarked', 'Pclass', 'SibSp', 'Parch', 'Fare'], 'Age', training_frame=known_ages)
-age_prediction = age_model.predict(unknown_ages)
-age_join_frame = age_prediction.cbind(unknown_ages['PassengerId'])
+age_model.train(['Title', 'Sex', 'Embarked', 'Pclass', 'SibSp', 'Parch', 'Fare'], 'Age', training_frame=known_ages_df)
+age_prediction = age_model.predict(unknown_ages_df)
+age_join_frame = age_prediction.cbind(unknown_ages_df['PassengerId'])
 all_data = helpers.merge_ages(all_data, age_join_frame)
 
 
@@ -70,7 +70,7 @@ valid_split = ss[1]
 predictor_names = ['Pclass', 'Sex', 'Age', 'Fare', 'SocialPosition', 'Embarked', 'Title', 'LastName']
 
 model = H2ORandomForestEstimator(binomial_double_trees=True, max_depth=7, ntrees=60, balance_classes=True, seed=42,
-                                 nfolds=5)
+                                 nfolds=10)
 model.train(predictor_names, response_name_fact, training_frame=train_split, validation_frame=valid_split)
 predictions = model.predict(all_data[test_idx])
 
