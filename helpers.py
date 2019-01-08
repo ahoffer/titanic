@@ -19,7 +19,7 @@ social_position = {
     'REV': 'PROFESSIONAL',
     'MR': 'NORMAL',
     'MRS': 'NORMAL',
-    'JONKHEER': 'NORMAL',
+    'JONKHEER': 'NOBILITY',
     'MME': 'NORMAL',
     'THE': 'NORMAL'}
 
